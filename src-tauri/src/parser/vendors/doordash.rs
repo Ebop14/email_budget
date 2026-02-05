@@ -16,7 +16,7 @@ impl VendorParser for DoorDashParser {
     }
 
     fn parse(&self, html: &str) -> ParseResult {
-        let document = Html::parse_document(html);
+        let _document = Html::parse_document(html);
         let text = super::extract_text(html);
 
         // Extract restaurant name
@@ -46,7 +46,7 @@ impl VendorParser for DoorDashParser {
     }
 }
 
-fn extract_restaurant(text: &str, html: &str) -> Option<String> {
+fn extract_restaurant(text: &str, _html: &str) -> Option<String> {
     // DoorDash emails typically have restaurant name prominently
     let patterns = [
         r"(?i)your order from\s+([A-Za-z0-9\s&'-]+)",

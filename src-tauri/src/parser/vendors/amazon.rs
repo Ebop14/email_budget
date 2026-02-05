@@ -96,7 +96,7 @@ fn extract_amount_from_text(text: &str) -> Option<i64> {
     None
 }
 
-fn extract_date(document: &Html, html: &str) -> Option<String> {
+fn extract_date(_document: &Html, html: &str) -> Option<String> {
     // Try to find date in common locations
     let date_patterns = [
         r"Order Placed[:\s]*([A-Za-z]+ \d{1,2}, \d{4})",

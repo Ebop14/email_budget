@@ -16,7 +16,7 @@ impl VendorParser for UberEatsParser {
     }
 
     fn parse(&self, html: &str) -> ParseResult {
-        let document = Html::parse_document(html);
+        let _document = Html::parse_document(html);
         let text = super::extract_text(html);
 
         // Extract restaurant name
@@ -46,7 +46,7 @@ impl VendorParser for UberEatsParser {
     }
 }
 
-fn extract_restaurant(text: &str, html: &str) -> Option<String> {
+fn extract_restaurant(text: &str, _html: &str) -> Option<String> {
     let patterns = [
         r"(?i)your order from\s+([A-Za-z0-9\s&'-]+)",
         r"(?i)order from\s+([A-Za-z0-9\s&'-]+)",

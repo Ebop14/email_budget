@@ -15,6 +15,7 @@ pub enum DbError {
     #[error("Database not found")]
     NotFound,
     #[error("Migration failed: {0}")]
+    #[allow(dead_code)]
     Migration(String),
 }
 

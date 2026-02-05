@@ -1,4 +1,4 @@
-use super::types::{ParseResult, ParsedTransaction};
+use super::types::ParseResult;
 use super::vendors::{
     amazon::AmazonParser, doordash::DoorDashParser, generic::GenericParser, uber::UberParser,
     uber_eats::UberEatsParser, venmo::VenmoParser, VendorParser,
@@ -45,6 +45,7 @@ pub fn parse_html(html: &str) -> ParseResult {
     ParseResult::NotRecognized
 }
 
+#[allow(dead_code)]
 /// Detect which vendor an HTML receipt is from
 pub fn detect_vendor(html: &str) -> Option<&'static str> {
     let html_lower = html.to_lowercase();

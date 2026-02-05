@@ -52,7 +52,7 @@ impl VendorParser for GenericParser {
     }
 }
 
-fn extract_merchant(document: &Html, text: &str, html: &str) -> Option<String> {
+fn extract_merchant(document: &Html, text: &str, _html: &str) -> Option<String> {
     // Try to find merchant from email subject or prominent text
     // Look for "from" patterns
     let from_patterns = [

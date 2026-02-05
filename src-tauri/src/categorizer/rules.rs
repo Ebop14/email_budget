@@ -68,6 +68,7 @@ fn find_category_by_name(
     Ok(result)
 }
 
+#[allow(dead_code)]
 /// Learn from a user's category assignment
 /// When a user manually assigns a category, we can optionally create a rule
 pub fn learn_from_assignment(

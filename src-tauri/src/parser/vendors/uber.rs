@@ -17,7 +17,7 @@ impl VendorParser for UberParser {
     }
 
     fn parse(&self, html: &str) -> ParseResult {
-        let document = Html::parse_document(html);
+        let _document = Html::parse_document(html);
         let text = super::extract_text(html);
 
         // Extract trip total

@@ -47,6 +47,7 @@ impl ParsedTransaction {
         }
     }
 
+    #[allow(dead_code)]
     /// Add an item to the transaction
     pub fn add_item(&mut self, item: ParsedItem) {
         self.items.push(item);
