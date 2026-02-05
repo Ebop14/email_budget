@@ -1,0 +1,128 @@
+import { invoke } from '@tauri-apps/api/core';
+import type {
+  TransactionWithCategory,
+  TransactionFilters,
+  ParsedTransaction,
+  ImportResult,
+  Category,
+  CategorySpending,
+  BudgetWithProgress,
+  Budget,
+} from '../types';
+
+// Import commands
+export async function importReceipts(
+  htmlContents: string[]
+): Promise<{ transactions: ParsedTransaction[]; duplicates: number; errors: string[] }> {
+  return invoke('import_receipts', { htmlContents });
+}
+
+export async function confirmImport(
+  transactions: ParsedTransaction[],
+  categoryAssignments: Record<number, string>
+): Promise<ImportResult> {
+  return invoke('confirm_import', { transactions, categoryAssignments });
+}
+
+// Transaction commands
+export async function getTransactions(
+  filters?: TransactionFilters
+): Promise<TransactionWithCategory[]> {
+  return invoke('get_transactions', { filters });
+}
+
+export async function updateTransactionCategory(
+  transactionId: string,
+  categoryId: string | null
+): Promise<void> {
+  return invoke('update_transaction_category', { transactionId, categoryId });
+}
+
+export async function deleteTransaction(transactionId: string): Promise<void> {
+  return invoke('delete_transaction', { transactionId });
+}
+
+// Category commands
+export async function getCategories(): Promise<Category[]> {
+  return invoke('get_categories');
+}
+
+export async function createCategory(
+  name: string,
+  icon: string,
+  color: string
+): Promise<Category> {
+  return invoke('create_category', { name, icon, color });
+}
+
+export async function updateCategory(
+  categoryId: string,
+  name: string,
+  icon: string,
+  color: string
+): Promise<void> {
+  return invoke('update_category', { categoryId, name, icon, color });
+}
+
+export async function deleteCategory(categoryId: string): Promise<void> {
+  return invoke('delete_category', { categoryId });
+}
+
+export async function getCategorySpending(
+  startDate: string,
+  endDate: string
+): Promise<CategorySpending[]> {
+  return invoke('get_category_spending', { startDate, endDate });
+}
+
+// Budget commands
+export async function getBudgets(): Promise<BudgetWithProgress[]> {
+  return invoke('get_budgets');
+}
+
+export async function setBudget(
+  categoryId: string,
+  amount: number,
+  period: 'weekly' | 'monthly' | 'yearly'
+): Promise<Budget> {
+  return invoke('set_budget', { categoryId, amount, period });
+}
+
+export async function deleteBudget(budgetId: string): Promise<void> {
+  return invoke('delete_budget', { budgetId });
+}
+
+// Dashboard commands
+export interface DashboardStats {
+  total_spent: number;
+  transaction_count: number;
+  category_count: number;
+  budget_health: 'good' | 'warning' | 'over';
+  category_spending: CategorySpending[];
+  recent_transactions: TransactionWithCategory[];
+  top_merchants: { merchant: string; total: number; count: number }[];
+}
+
+export async function getDashboardStats(
+  month: number,
+  year: number
+): Promise<DashboardStats> {
+  return invoke('get_dashboard_stats', { month, year });
+}
+
+// Settings commands
+export async function initializeDatabase(): Promise<void> {
+  return invoke('initialize_database');
+}
+
+export async function setMerchantCategoryRule(
+  merchantPattern: string,
+  categoryId: string,
+  isExactMatch: boolean
+): Promise<void> {
+  return invoke('set_merchant_category_rule', {
+    merchantPattern,
+    categoryId,
+    isExactMatch,
+  });
+}
