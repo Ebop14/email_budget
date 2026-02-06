@@ -1,11 +1,30 @@
 import { Header } from '../components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useGmail } from '../hooks/useGmail';
 import { SUPPORTED_PROVIDERS } from '../lib/constants';
 import { cn } from '../lib/utils';
+import { GmailCredentialsForm } from '../components/gmail/GmailCredentialsForm';
+import { GmailConnectCard } from '../components/gmail/GmailConnectCard';
+import { SenderFilterList } from '../components/gmail/SenderFilterList';
+import * as tauri from '../lib/tauri';
 
 export function Settings() {
   const { theme, setTheme, selectedProviders, toggleProvider } = useSettingsStore();
+  const {
+    status,
+    filters,
+    syncStatus,
+    isLoading,
+    saveCredentials,
+    deleteCredentials,
+    connect,
+    disconnect,
+    syncNow,
+    addFilter,
+    removeFilter,
+    toggleFilter,
+  } = useGmail();
 
   return (
     <>
@@ -37,6 +56,34 @@ export function Settings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Gmail Integration */}
+          <GmailCredentialsForm
+            hasCredentials={status?.has_credentials ?? false}
+            onSave={saveCredentials}
+            onDelete={deleteCredentials}
+            isLoading={isLoading}
+          />
+
+          <GmailConnectCard
+            status={status}
+            syncStatus={syncStatus}
+            onConnect={connect}
+            onDisconnect={disconnect}
+            onSyncNow={syncNow}
+            onStartPolling={() => tauri.gmailStartPolling()}
+            onStopPolling={() => tauri.gmailStopPolling()}
+            isLoading={isLoading}
+          />
+
+          {status?.is_connected && (
+            <SenderFilterList
+              filters={filters}
+              onAdd={addFilter}
+              onRemove={removeFilter}
+              onToggle={toggleFilter}
+            />
+          )}
 
           {/* Providers */}
           <Card>

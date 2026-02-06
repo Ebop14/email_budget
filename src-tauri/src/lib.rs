@@ -2,6 +2,10 @@ mod commands;
 mod db;
 mod parser;
 mod categorizer;
+mod gmail;
+
+use tauri::Manager;
+use gmail::poller::{GmailPollerState, spawn_poller};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -24,6 +28,28 @@ pub fn run() {
                 }
             });
 
+            // Set up Gmail poller
+            let poller_state = GmailPollerState::new();
+            spawn_poller(app.handle().clone(), &poller_state);
+
+            // Auto-start polling if tokens exist
+            let app_handle = app.handle().clone();
+            let auto_start = {
+                if let Ok(conn) = db::get_connection(&app_handle) {
+                    gmail::tokens::has_tokens(&conn).unwrap_or(false)
+                } else {
+                    false
+                }
+            };
+
+            app.manage(poller_state);
+
+            if auto_start {
+                let poller = app.state::<GmailPollerState>();
+                poller.start();
+                log::info!("Gmail poller auto-started (tokens found)");
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -43,6 +69,19 @@ pub fn run() {
             commands::dashboard::get_dashboard_stats,
             commands::settings::initialize_database,
             commands::settings::set_merchant_category_rule,
+            commands::gmail::gmail_save_credentials,
+            commands::gmail::gmail_has_credentials,
+            commands::gmail::gmail_delete_credentials,
+            commands::gmail::gmail_connect,
+            commands::gmail::gmail_disconnect,
+            commands::gmail::gmail_get_status,
+            commands::gmail::gmail_start_polling,
+            commands::gmail::gmail_stop_polling,
+            commands::gmail::gmail_sync_now,
+            commands::gmail::gmail_get_sender_filters,
+            commands::gmail::gmail_add_sender_filter,
+            commands::gmail::gmail_remove_sender_filter,
+            commands::gmail::gmail_toggle_sender_filter,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

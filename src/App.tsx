@@ -6,6 +6,7 @@ import { Transactions } from './pages/Transactions';
 import { Import } from './pages/Import';
 import { Budgets } from './pages/Budgets';
 import { Settings } from './pages/Settings';
+import { GmailSyncNotification } from './components/gmail/GmailSyncNotification';
 import { initializeTheme } from './stores/settingsStore';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
+      <GmailSyncNotification />
     </BrowserRouter>
   );
 }

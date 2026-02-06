@@ -8,6 +8,9 @@ import type {
   CategorySpending,
   BudgetWithProgress,
   Budget,
+  GmailConnectionStatus,
+  SenderFilter,
+  GmailSyncResult,
 } from '../types';
 
 // Import commands
@@ -125,4 +128,63 @@ export async function setMerchantCategoryRule(
     categoryId,
     isExactMatch,
   });
+}
+
+// Gmail commands
+export async function gmailSaveCredentials(
+  clientId: string,
+  clientSecret: string
+): Promise<void> {
+  return invoke('gmail_save_credentials', { clientId, clientSecret });
+}
+
+export async function gmailHasCredentials(): Promise<boolean> {
+  return invoke('gmail_has_credentials');
+}
+
+export async function gmailDeleteCredentials(): Promise<void> {
+  return invoke('gmail_delete_credentials');
+}
+
+export async function gmailConnect(): Promise<string> {
+  return invoke('gmail_connect');
+}
+
+export async function gmailDisconnect(): Promise<void> {
+  return invoke('gmail_disconnect');
+}
+
+export async function gmailGetStatus(): Promise<GmailConnectionStatus> {
+  return invoke('gmail_get_status');
+}
+
+export async function gmailStartPolling(): Promise<void> {
+  return invoke('gmail_start_polling');
+}
+
+export async function gmailStopPolling(): Promise<void> {
+  return invoke('gmail_stop_polling');
+}
+
+export async function gmailSyncNow(): Promise<GmailSyncResult> {
+  return invoke('gmail_sync_now');
+}
+
+export async function gmailGetSenderFilters(): Promise<SenderFilter[]> {
+  return invoke('gmail_get_sender_filters');
+}
+
+export async function gmailAddSenderFilter(
+  email: string,
+  label: string
+): Promise<SenderFilter> {
+  return invoke('gmail_add_sender_filter', { email, label });
+}
+
+export async function gmailRemoveSenderFilter(filterId: string): Promise<void> {
+  return invoke('gmail_remove_sender_filter', { filterId });
+}
+
+export async function gmailToggleSenderFilter(filterId: string): Promise<void> {
+  return invoke('gmail_toggle_sender_filter', { filterId });
 }

@@ -1,11 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight, Mail, RefreshCw, Upload as UploadIcon } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { DropZone } from '../components/import/DropZone';
 import { ParsePreview } from '../components/import/ParsePreview';
 import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import { useImport } from '../hooks/useImport';
 import { useCategories } from '../hooks/useCategories';
+import { useGmail } from '../hooks/useGmail';
 
 export function Import() {
   const navigate = useNavigate();
@@ -25,6 +28,7 @@ export function Import() {
   } = useImport();
 
   const { categories } = useCategories();
+  const { status, syncStatus, syncNow, lastSyncResult } = useGmail();
 
   return (
     <>
@@ -32,7 +36,7 @@ export function Import() {
         title="Import Receipts"
         description={
           step === 'select'
-            ? 'Drag and drop HTML email files to import'
+            ? 'Auto-import from Gmail or manually upload HTML files'
             : step === 'preview'
             ? 'Review and confirm your transactions'
             : 'Import complete!'
@@ -47,7 +51,84 @@ export function Import() {
           )}
 
           {step === 'select' && (
-            <DropZone onFilesSelected={parseFiles} isLoading={isLoading} />
+            <div className="space-y-6">
+              {/* Gmail Sync Section */}
+              {status?.is_connected && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="h-5 w-5" />
+                      Gmail Auto-Import
+                    </CardTitle>
+                    <CardDescription>
+                      Connected as {status.email} — receipts are imported automatically every 30s
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        {status.last_sync_at
+                          ? `Last sync: ${new Date(status.last_sync_at).toLocaleString()}`
+                          : 'Never synced'}
+                      </div>
+                      {syncStatus === 'syncing' ? (
+                        <Badge variant="default">Syncing...</Badge>
+                      ) : (
+                        <Badge variant="secondary">Auto-syncing</Badge>
+                      )}
+                    </div>
+
+                    {lastSyncResult && lastSyncResult.new_transactions > 0 && (
+                      <div className="text-sm p-2 bg-green-500/10 text-green-700 dark:text-green-400 rounded">
+                        Last sync imported {lastSyncResult.new_transactions} transaction
+                        {lastSyncResult.new_transactions !== 1 ? 's' : ''}
+                      </div>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      onClick={() => syncNow()}
+                      disabled={syncStatus === 'syncing'}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                      Sync Now
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Manual Import Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UploadIcon className="h-5 w-5" />
+                    {status?.is_connected ? 'Manual Import' : 'Import Receipts'}
+                  </CardTitle>
+                  {status?.is_connected && (
+                    <CardDescription>
+                      Upload HTML receipt files directly if they weren't captured by Gmail sync
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <DropZone onFilesSelected={parseFiles} isLoading={isLoading} />
+                </CardContent>
+              </Card>
+
+              {!status?.is_connected && (
+                <div className="text-center text-sm text-muted-foreground">
+                  <p>
+                    Want automatic import?{' '}
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="text-primary hover:underline"
+                    >
+                      Connect Gmail in Settings
+                    </button>
+                  </p>
+                </div>
+              )}
+            </div>
           )}
 
           {step === 'preview' && (

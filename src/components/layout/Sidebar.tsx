@@ -8,6 +8,8 @@ import {
   Wallet,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { GmailSyncBadge } from '../gmail/GmailSyncBadge';
+import { useGmailStore } from '../../stores/gmailStore';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -18,6 +20,9 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const status = useGmailStore((s) => s.status);
+  const syncStatus = useGmailStore((s) => s.syncStatus);
+
   return (
     <aside className="w-64 bg-card border-r border-border flex flex-col">
       {/* Logo */}
@@ -47,9 +52,13 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center">
+      {/* Gmail Status + Footer */}
+      <div className="border-t border-border">
+        <GmailSyncBadge
+          isConnected={status?.is_connected ?? false}
+          syncStatus={syncStatus}
+        />
+        <p className="text-xs text-muted-foreground text-center pb-4">
           Email Budget v0.1.0
         </p>
       </div>

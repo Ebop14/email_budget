@@ -1,7 +1,8 @@
 use rusqlite::Connection;
 use super::DbResult;
 
-const SCHEMA_VERSION: i32 = 1;
+#[allow(dead_code)]
+const SCHEMA_VERSION: i32 = 2;
 
 /// Run database migrations
 pub fn run_migrations(conn: &Connection) -> DbResult<()> {
@@ -22,13 +23,14 @@ pub fn run_migrations(conn: &Connection) -> DbResult<()> {
         )
         .unwrap_or(0);
 
-    if current_version < SCHEMA_VERSION {
-        log::info!(
-            "Running migrations from version {} to {}",
-            current_version,
-            SCHEMA_VERSION
-        );
+    if current_version < 1 {
+        log::info!("Running migration v1");
         migrate_v1(conn)?;
+    }
+
+    if current_version < 2 {
+        log::info!("Running migration v2 (Gmail integration)");
+        migrate_v2(conn)?;
     }
 
     Ok(())
@@ -169,6 +171,71 @@ fn migrate_v1(conn: &Connection) -> DbResult<()> {
 
         -- Record migration
         INSERT INTO migrations (version) VALUES (1);
+        "#,
+    )?;
+
+    Ok(())
+}
+
+fn migrate_v2(conn: &Connection) -> DbResult<()> {
+    conn.execute_batch(
+        r#"
+        -- Gmail OAuth credentials (singleton row)
+        CREATE TABLE IF NOT EXISTS gmail_credentials (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            client_id TEXT NOT NULL,
+            client_secret TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        -- Gmail OAuth tokens (singleton row)
+        CREATE TABLE IF NOT EXISTS gmail_tokens (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            access_token TEXT NOT NULL,
+            refresh_token TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            email TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        -- Gmail sync state (singleton row)
+        CREATE TABLE IF NOT EXISTS gmail_sync_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            history_id TEXT,
+            last_sync_at TEXT,
+            is_initial_sync_complete INTEGER NOT NULL DEFAULT 0
+        );
+
+        -- Gmail sender filters
+        CREATE TABLE IF NOT EXISTS gmail_sender_filters (
+            id TEXT PRIMARY KEY,
+            email TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        -- Gmail processed message IDs (prevents re-processing)
+        CREATE TABLE IF NOT EXISTS gmail_processed_messages (
+            gmail_message_id TEXT PRIMARY KEY,
+            processed_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        -- Index for processed messages cleanup
+        CREATE INDEX IF NOT EXISTS idx_gmail_processed_at
+            ON gmail_processed_messages(processed_at);
+
+        -- Seed default sender filters
+        INSERT OR IGNORE INTO gmail_sender_filters (id, email, label, enabled) VALUES
+            ('filter_amazon', 'auto-confirm@amazon.com', 'Amazon', 1),
+            ('filter_doordash', 'no-reply@doordash.com', 'DoorDash', 1),
+            ('filter_ubereats', 'uber.us@uber.com', 'Uber Eats', 1),
+            ('filter_uber', 'noreply@uber.com', 'Uber', 1),
+            ('filter_venmo', 'venmo@venmo.com', 'Venmo', 1);
+
+        -- Record migration
+        INSERT INTO migrations (version) VALUES (2);
         "#,
     )?;
 
