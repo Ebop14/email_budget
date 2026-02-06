@@ -49,3 +49,7 @@ Pods/
 # macOS
 *.dmg
 *.app
+
+# Swift build artifacts
+.build/
+.swiftpm/
