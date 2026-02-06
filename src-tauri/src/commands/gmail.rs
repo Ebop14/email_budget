@@ -1,7 +1,7 @@
 use tauri::{AppHandle, Manager};
 
 use crate::db;
-use crate::gmail::{oauth, tokens, sync, poller::GmailPollerState};
+use crate::gmail::{oauth, oauth_mobile, tokens, sync, poller::GmailPollerState};
 use crate::gmail::types::*;
 
 // ============================================================================
@@ -52,8 +52,15 @@ pub async fn gmail_connect(app_handle: AppHandle) -> Result<String, String> {
         .map_err(|e| e.to_string())?
         .ok_or("No Gmail credentials configured. Please add your Google Cloud OAuth credentials first.")?;
 
-    // Run OAuth flow
-    let oauth_tokens = oauth::run_oauth_flow(&client_id, &client_secret).await?;
+    // Run OAuth flow (desktop uses localhost callback, mobile uses custom URL scheme)
+    let oauth_tokens = if cfg!(target_os = "ios") || cfg!(target_os = "android") {
+        // On mobile, return the auth URL for the frontend to open via ASWebAuthenticationSession
+        // The frontend will call gmail_exchange_code with the resulting code
+        let auth_url = oauth_mobile::build_auth_url(&client_id);
+        return Ok(format!("auth_url:{}", auth_url));
+    } else {
+        oauth::run_oauth_flow(&client_id, &client_secret).await?
+    };
 
     // Get user email from profile
     let gmail_client = crate::gmail::client::GmailClient::new(&oauth_tokens.access_token);
@@ -74,6 +81,42 @@ pub async fn gmail_connect(app_handle: AppHandle) -> Result<String, String> {
     poller.start();
 
     log::info!("Gmail connected for: {}", profile.email_address);
+    Ok(profile.email_address)
+}
+
+/// Exchange an authorization code from mobile OAuth for tokens
+#[tauri::command]
+pub async fn gmail_exchange_code(
+    app_handle: AppHandle,
+    code: String,
+) -> Result<String, String> {
+    let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
+
+    let (client_id, client_secret) = tokens::get_credentials(&conn)
+        .map_err(|e| e.to_string())?
+        .ok_or("No Gmail credentials configured.")?;
+
+    let oauth_tokens = oauth_mobile::exchange_code_mobile(&client_id, &client_secret, &code).await?;
+
+    // Get user email from profile
+    let gmail_client = crate::gmail::client::GmailClient::new(&oauth_tokens.access_token);
+    let profile = gmail_client.get_profile().await?;
+
+    // Save tokens
+    tokens::save_tokens(
+        &conn,
+        &oauth_tokens.access_token,
+        &oauth_tokens.refresh_token,
+        &oauth_tokens.expires_at,
+        &profile.email_address,
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Start polling
+    let poller = app_handle.state::<GmailPollerState>();
+    poller.start();
+
+    log::info!("Gmail connected on mobile for: {}", profile.email_address);
     Ok(profile.email_address)
 }
 

@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Email Budget",
   "version": "0.1.0",
-  "identifier": "com.emailbudget.desktop",
+  "identifier": "com.emailbudget.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:3000",

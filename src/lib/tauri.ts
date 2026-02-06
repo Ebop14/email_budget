@@ -113,6 +113,11 @@ export async function getDashboardStats(
   return invoke('get_dashboard_stats', { month, year });
 }
 
+// Platform commands
+export async function getPlatform(): Promise<string> {
+  return invoke('get_platform');
+}
+
 // Settings commands
 export async function initializeDatabase(): Promise<void> {
   return invoke('initialize_database');
@@ -128,6 +133,20 @@ export async function setMerchantCategoryRule(
     categoryId,
     isExactMatch,
   });
+}
+
+// OCR commands
+export async function importReceiptFromOcr(
+  ocrText: string,
+  confidence: number
+): Promise<ParsedTransaction> {
+  return invoke('import_receipt_from_ocr', { ocrText, confidence });
+}
+
+export async function captureReceiptPhoto(
+  source: 'camera' | 'library'
+): Promise<{ text: string; confidence: number }> {
+  return invoke('plugin:receipt-capture|capture_and_recognize', { source });
 }
 
 // Gmail commands
@@ -187,4 +206,8 @@ export async function gmailRemoveSenderFilter(filterId: string): Promise<void> {
 
 export async function gmailToggleSenderFilter(filterId: string): Promise<void> {
   return invoke('gmail_toggle_sender_filter', { filterId });
+}
+
+export async function gmailExchangeCode(code: string): Promise<string> {
+  return invoke('gmail_exchange_code', { code });
 }

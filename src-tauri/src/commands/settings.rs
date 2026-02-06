@@ -8,6 +8,18 @@ pub async fn initialize_database(app_handle: AppHandle) -> Result<(), String> {
     db::initialize(&app_handle).await.map_err(|e| e.to_string())
 }
 
+/// Get the current platform (desktop, ios, android)
+#[tauri::command]
+pub fn get_platform() -> String {
+    if cfg!(target_os = "ios") {
+        "ios".to_string()
+    } else if cfg!(target_os = "android") {
+        "android".to_string()
+    } else {
+        "desktop".to_string()
+    }
+}
+
 /// Set a merchant category rule
 #[tauri::command]
 pub async fn set_merchant_category_rule(

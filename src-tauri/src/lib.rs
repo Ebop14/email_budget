@@ -3,6 +3,7 @@ mod db;
 mod parser;
 mod categorizer;
 mod gmail;
+mod ocr;
 
 use tauri::Manager;
 use gmail::poller::{GmailPollerState, spawn_poller};
@@ -11,6 +12,7 @@ use gmail::poller::{GmailPollerState, spawn_poller};
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(tauri_plugin_haptics::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -68,6 +70,7 @@ pub fn run() {
             commands::budgets::delete_budget,
             commands::dashboard::get_dashboard_stats,
             commands::settings::initialize_database,
+            commands::settings::get_platform,
             commands::settings::set_merchant_category_rule,
             commands::gmail::gmail_save_credentials,
             commands::gmail::gmail_has_credentials,
@@ -82,6 +85,8 @@ pub fn run() {
             commands::gmail::gmail_add_sender_filter,
             commands::gmail::gmail_remove_sender_filter,
             commands::gmail::gmail_toggle_sender_filter,
+            commands::gmail::gmail_exchange_code,
+            commands::ocr::import_receipt_from_ocr,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

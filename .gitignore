@@ -22,3 +22,30 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+src-tauri/.env
+*.key
+*.pem
+*.p12
+*.mobileprovision
+*.provisionprofile
+credentials.json
+
+# Tauri generated (contains machine-specific paths & signing config)
+src-tauri/gen/
+
+# Rust build artifacts
+src-tauri/target/
+
+# iOS / Xcode
+*.xcworkspace
+Pods/
+*.ipa
+
+# macOS
+*.dmg
+*.app

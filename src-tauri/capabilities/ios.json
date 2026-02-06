@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/ios-schema.json",
+  "identifier": "ios",
+  "description": "iOS-specific permissions",
+  "platforms": ["iOS"],
+  "permissions": [
+    "core:default"
+  ]
+}
