@@ -305,8 +305,8 @@ async fn process_message(
 /// Get a valid access token, refreshing if expired.
 /// Opens and drops the DB connection before any async work to avoid Send issues.
 async fn get_valid_access_token(app_handle: &AppHandle) -> Result<String, String> {
-    // Read tokens and credentials from DB (sync block, connection dropped before await)
-    let (access_token, refresh_token, expires_at, client_id, client_secret) = {
+    // Read tokens from DB (sync block, connection dropped before await)
+    let (access_token, refresh_token, expires_at) = {
         let conn = db::get_connection(app_handle).map_err(|e| e.to_string())?;
 
         let (access_token, refresh_token, expires_at, _email) = tokens::get_tokens(&conn)
@@ -322,19 +322,14 @@ async fn get_valid_access_token(app_handle: &AppHandle) -> Result<String, String
             return Ok(access_token);
         }
 
-        // Token expired — need credentials for refresh
-        let (client_id, client_secret) = tokens::get_credentials(&conn)
-            .map_err(|e| e.to_string())?
-            .ok_or("No Gmail credentials found")?;
-
-        (access_token, refresh_token, expires_at, client_id, client_secret)
+        (access_token, refresh_token, expires_at)
     };
     // conn is dropped here
 
     let _ = (access_token, expires_at); // explicitly mark as consumed
 
-    // Now do the async refresh (no Connection held)
-    match oauth::refresh_access_token(&client_id, &client_secret, &refresh_token).await {
+    // Now do the async refresh using hardcoded credentials (no Connection held)
+    match oauth::refresh_access_token(&refresh_token).await {
         Ok((new_access_token, new_expires_at)) => {
             let conn = db::get_connection(app_handle).map_err(|e| e.to_string())?;
             tokens::update_access_token(&conn, &new_access_token, &new_expires_at)

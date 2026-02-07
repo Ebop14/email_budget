@@ -2,7 +2,7 @@ use rusqlite::Connection;
 use super::DbResult;
 
 #[allow(dead_code)]
-const SCHEMA_VERSION: i32 = 2;
+const SCHEMA_VERSION: i32 = 3;
 
 /// Run database migrations
 pub fn run_migrations(conn: &Connection) -> DbResult<()> {
@@ -31,6 +31,11 @@ pub fn run_migrations(conn: &Connection) -> DbResult<()> {
     if current_version < 2 {
         log::info!("Running migration v2 (Gmail integration)");
         migrate_v2(conn)?;
+    }
+
+    if current_version < 3 {
+        log::info!("Running migration v3 (drop gmail_credentials, use hardcoded OAuth)");
+        migrate_v3(conn)?;
     }
 
     Ok(())
@@ -236,6 +241,20 @@ fn migrate_v2(conn: &Connection) -> DbResult<()> {
 
         -- Record migration
         INSERT INTO migrations (version) VALUES (2);
+        "#,
+    )?;
+
+    Ok(())
+}
+
+fn migrate_v3(conn: &Connection) -> DbResult<()> {
+    conn.execute_batch(
+        r#"
+        -- Drop gmail_credentials table (credentials are now hardcoded in the app)
+        DROP TABLE IF EXISTS gmail_credentials;
+
+        -- Record migration
+        INSERT INTO migrations (version) VALUES (3);
         "#,
     )?;
 

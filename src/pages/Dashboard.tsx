@@ -52,22 +52,22 @@ export function Dashboard() {
         title="Dashboard"
         description="Your spending at a glance"
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={goToPreviousMonth}>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={goToPreviousMonth} className="rounded-xl">
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium min-w-[120px] text-center">
+            <span className="text-sm font-semibold min-w-[130px] text-center tracking-wide">
               {monthLabel}
             </span>
-            <Button variant="ghost" size="icon" onClick={goToNextMonth}>
+            <Button variant="ghost" size="icon" onClick={goToNextMonth} className="rounded-xl">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         }
       />
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-8">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           <SummaryCard
             title="Total Spent"
             value={stats ? formatCurrency(stats.total_spent) : '$0.00'}
@@ -98,7 +98,7 @@ export function Dashboard() {
         </div>
 
         {/* Charts and Lists */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <CategoryChart
             spending={stats?.category_spending || []}
             isLoading={isLoading}

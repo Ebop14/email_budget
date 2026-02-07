@@ -4,41 +4,6 @@ use crate::db::DbResult;
 use super::types::SenderFilter;
 
 // ============================================================================
-// Credentials CRUD
-// ============================================================================
-
-pub fn save_credentials(conn: &Connection, client_id: &str, client_secret: &str) -> DbResult<()> {
-    conn.execute(
-        "INSERT OR REPLACE INTO gmail_credentials (id, client_id, client_secret) VALUES (1, ?1, ?2)",
-        params![client_id, client_secret],
-    )?;
-    Ok(())
-}
-
-pub fn get_credentials(conn: &Connection) -> DbResult<Option<(String, String)>> {
-    let result = conn
-        .query_row(
-            "SELECT client_id, client_secret FROM gmail_credentials WHERE id = 1",
-            [],
-            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
-        )
-        .optional()?;
-    Ok(result)
-}
-
-pub fn delete_credentials(conn: &Connection) -> DbResult<()> {
-    conn.execute("DELETE FROM gmail_credentials", [])?;
-    Ok(())
-}
-
-pub fn has_credentials(conn: &Connection) -> DbResult<bool> {
-    let count: i32 = conn
-        .query_row("SELECT COUNT(*) FROM gmail_credentials", [], |row| row.get(0))
-        .unwrap_or(0);
-    Ok(count > 0)
-}
-
-// ============================================================================
 // Token CRUD
 // ============================================================================
 

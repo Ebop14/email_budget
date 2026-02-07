@@ -1,7 +1,8 @@
 use reqwest::Client;
 use serde::Deserialize;
 
-use super::oauth::OAuthTokens;
+use super::config;
+use super::oauth::{self, OAuthTokens};
 
 const AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
@@ -17,22 +18,28 @@ struct TokenResponse {
     token_type: String,
 }
 
-/// Build the OAuth authorization URL for mobile (uses custom URL scheme)
-pub fn build_auth_url(client_id: &str) -> String {
-    format!(
-        "{}?client_id={}&redirect_uri={}&response_type=code&scope={}&access_type=offline&prompt=consent",
+/// Build the OAuth authorization URL for mobile (uses custom URL scheme) with PKCE.
+/// Returns (auth_url, code_verifier) — the verifier must be sent back when exchanging the code.
+pub fn build_auth_url() -> (String, String) {
+    let code_verifier = oauth::generate_code_verifier();
+    let code_challenge = oauth::compute_code_challenge(&code_verifier);
+
+    let url = format!(
+        "{}?client_id={}&redirect_uri={}&response_type=code&scope={}&access_type=offline&prompt=consent&code_challenge={}&code_challenge_method=S256",
         AUTH_URL,
-        urlencoding::encode(client_id),
+        urlencoding::encode(config::GOOGLE_CLIENT_ID),
         urlencoding::encode(REDIRECT_URI),
         urlencoding::encode(SCOPES),
-    )
+        urlencoding::encode(&code_challenge),
+    );
+
+    (url, code_verifier)
 }
 
-/// Exchange an authorization code for tokens (mobile redirect URI)
+/// Exchange an authorization code for tokens (mobile redirect URI) with PKCE
 pub async fn exchange_code_mobile(
-    client_id: &str,
-    client_secret: &str,
     code: &str,
+    code_verifier: &str,
 ) -> Result<OAuthTokens, String> {
     let client = Client::new();
 
@@ -40,10 +47,11 @@ pub async fn exchange_code_mobile(
         .post(TOKEN_URL)
         .form(&[
             ("code", code),
-            ("client_id", client_id),
-            ("client_secret", client_secret),
+            ("client_id", config::GOOGLE_CLIENT_ID),
+            ("client_secret", config::GOOGLE_CLIENT_SECRET),
             ("redirect_uri", REDIRECT_URI),
             ("grant_type", "authorization_code"),
+            ("code_verifier", code_verifier),
         ])
         .send()
         .await

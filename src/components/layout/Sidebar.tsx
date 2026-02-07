@@ -24,25 +24,27 @@ export function Sidebar() {
   const syncStatus = useGmailStore((s) => s.syncStatus);
 
   return (
-    <aside className="w-64 bg-card border-r border-border flex flex-col">
+    <aside className="w-64 glass-strong flex flex-col border-r-0">
       {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-border">
-        <Wallet className="h-6 w-6 text-primary mr-2" />
-        <span className="text-lg font-semibold">Email Budget</span>
+      <div className="h-18 flex items-center px-6 py-5">
+        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center mr-3">
+          <Wallet className="h-5 w-5 text-primary" />
+        </div>
+        <span className="text-lg font-bold tracking-tight">Email Budget</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 px-4 pt-2 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
               )
             }
           >
@@ -53,12 +55,12 @@ export function Sidebar() {
       </nav>
 
       {/* Gmail Status + Footer */}
-      <div className="border-t border-border">
+      <div className="px-4 pb-4">
         <GmailSyncBadge
           isConnected={status?.is_connected ?? false}
           syncStatus={syncStatus}
         />
-        <p className="text-xs text-muted-foreground text-center pb-4">
+        <p className="text-[11px] text-muted-foreground/60 text-center mt-3">
           Email Budget v0.1.0
         </p>
       </div>

@@ -146,25 +146,37 @@ export async function importReceiptFromOcr(
 export async function captureReceiptPhoto(
   source: 'camera' | 'library'
 ): Promise<{ text: string; confidence: number }> {
+  // On iOS, use the WKWebView native bridge instead of Tauri plugin invoke
+  if (
+    typeof window !== 'undefined' &&
+    (window as any).webkit?.messageHandlers?.captureReceipt
+  ) {
+    return new Promise((resolve, reject) => {
+      const callbackId = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      if (!(window as any).__receiptCaptureCallbacks) {
+        (window as any).__receiptCaptureCallbacks = {};
+      }
+      (window as any).__receiptCaptureCallbacks[callbackId] = (
+        result: { text?: string; confidence?: number; error?: string }
+      ) => {
+        delete (window as any).__receiptCaptureCallbacks[callbackId];
+        if (result.error) {
+          reject(new Error(result.error));
+        } else {
+          resolve({ text: result.text || '', confidence: result.confidence || 0 });
+        }
+      };
+      (window as any).webkit.messageHandlers.captureReceipt.postMessage({
+        source,
+        callbackId,
+      });
+    });
+  }
+  // Fallback for non-iOS platforms
   return invoke('plugin:receipt-capture|capture_and_recognize', { source });
 }
 
 // Gmail commands
-export async function gmailSaveCredentials(
-  clientId: string,
-  clientSecret: string
-): Promise<void> {
-  return invoke('gmail_save_credentials', { clientId, clientSecret });
-}
-
-export async function gmailHasCredentials(): Promise<boolean> {
-  return invoke('gmail_has_credentials');
-}
-
-export async function gmailDeleteCredentials(): Promise<void> {
-  return invoke('gmail_delete_credentials');
-}
-
 export async function gmailConnect(): Promise<string> {
   return invoke('gmail_connect');
 }
@@ -208,6 +220,6 @@ export async function gmailToggleSenderFilter(filterId: string): Promise<void> {
   return invoke('gmail_toggle_sender_filter', { filterId });
 }
 
-export async function gmailExchangeCode(code: string): Promise<string> {
-  return invoke('gmail_exchange_code', { code });
+export async function gmailExchangeCode(code: string, codeVerifier: string): Promise<string> {
+  return invoke('gmail_exchange_code', { code, codeVerifier });
 }

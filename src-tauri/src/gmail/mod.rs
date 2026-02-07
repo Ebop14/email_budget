@@ -5,3 +5,4 @@ pub mod oauth_mobile;
 pub mod client;
 pub mod sync;
 pub mod poller;
+pub mod config;

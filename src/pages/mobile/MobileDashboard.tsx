@@ -144,7 +144,7 @@ export function MobileDashboard() {
                   >
                     <span
                       className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: cat.color }}
+                      style={{ backgroundColor: cat.category_color }}
                     />
                     <span className="whitespace-nowrap">{cat.category_name}</span>
                     <span className="text-muted-foreground whitespace-nowrap">

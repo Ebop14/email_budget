@@ -35,24 +35,20 @@ export function GmailConnectCard({
   onStopPolling,
   isLoading,
 }: GmailConnectCardProps) {
-  if (!status?.has_credentials) {
-    return null;
-  }
-
-  if (!status.is_connected) {
+  if (!status?.is_connected) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Gmail Connection
+            Gmail Integration
           </CardTitle>
-          <CardDescription>Connect your Gmail to auto-import receipts</CardDescription>
+          <CardDescription>Connect your Gmail to auto-import receipt emails</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={onConnect} disabled={isLoading}>
             <Mail className="h-4 w-4 mr-2" />
-            {isLoading ? 'Connecting...' : 'Connect Gmail'}
+            {isLoading ? 'Connecting...' : 'Sign in with Google'}
           </Button>
         </CardContent>
       </Card>

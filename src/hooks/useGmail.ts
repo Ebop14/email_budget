@@ -25,31 +25,6 @@ export function useGmail() {
     }
   }, [store.setFilters]);
 
-  const saveCredentials = useCallback(async (clientId: string, clientSecret: string) => {
-    store.setLoading(true);
-    store.setError(null);
-    try {
-      await tauri.gmailSaveCredentials(clientId, clientSecret);
-      await fetchStatus();
-    } catch (err) {
-      store.setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      store.setLoading(false);
-    }
-  }, [store.setLoading, store.setError, fetchStatus]);
-
-  const deleteCredentials = useCallback(async () => {
-    store.setLoading(true);
-    try {
-      await tauri.gmailDeleteCredentials();
-      await fetchStatus();
-    } catch (err) {
-      store.setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      store.setLoading(false);
-    }
-  }, [store.setLoading, store.setError, fetchStatus]);
-
   const connect = useCallback(async () => {
     store.setLoading(true);
     store.setError(null);
@@ -153,8 +128,6 @@ export function useGmail() {
     lastSyncResult: store.lastSyncResult,
     isLoading: store.isLoading,
     error: store.error,
-    saveCredentials,
-    deleteCredentials,
     connect,
     disconnect,
     syncNow,

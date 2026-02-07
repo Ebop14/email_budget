@@ -9,8 +9,12 @@ use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 
+use rand::Rng;
 use reqwest::Client;
 use serde::Deserialize;
+use sha2::{Sha256, Digest};
+
+use super::config;
 
 const AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
@@ -35,21 +39,44 @@ pub struct OAuthTokens {
     pub expires_at: String,
 }
 
-/// Run the full OAuth 2.0 desktop flow:
+/// Generate a cryptographically random PKCE code verifier (43–128 chars, URL-safe)
+pub fn generate_code_verifier() -> String {
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+    let mut rng = rand::thread_rng();
+    (0..128)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
+}
+
+/// Compute the S256 code challenge from a code verifier
+pub fn compute_code_challenge(verifier: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(verifier.as_bytes());
+    let hash = hasher.finalize();
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash)
+}
+
+use base64::Engine;
+
+/// Run the full OAuth 2.0 desktop flow with PKCE:
 /// 1. Open browser to Google consent page
 /// 2. Listen on localhost for the redirect callback
 /// 3. Exchange authorization code for tokens
-pub async fn run_oauth_flow(
-    client_id: &str,
-    client_secret: &str,
-) -> Result<OAuthTokens, String> {
-    // Build the authorization URL
+pub async fn run_oauth_flow() -> Result<OAuthTokens, String> {
+    let code_verifier = generate_code_verifier();
+    let code_challenge = compute_code_challenge(&code_verifier);
+
+    // Build the authorization URL with PKCE
     let auth_url = format!(
-        "{}?client_id={}&redirect_uri={}&response_type=code&scope={}&access_type=offline&prompt=consent",
+        "{}?client_id={}&redirect_uri={}&response_type=code&scope={}&access_type=offline&prompt=consent&code_challenge={}&code_challenge_method=S256",
         AUTH_URL,
-        urlencoding::encode(client_id),
+        urlencoding::encode(config::GOOGLE_CLIENT_ID),
         urlencoding::encode(REDIRECT_URI),
         urlencoding::encode(SCOPES),
+        urlencoding::encode(&code_challenge),
     );
 
     // Open browser
@@ -59,7 +86,7 @@ pub async fn run_oauth_flow(
     let code = wait_for_callback().await?;
 
     // Exchange authorization code for tokens
-    exchange_code(client_id, client_secret, &code).await
+    exchange_code(&code, &code_verifier).await
 }
 
 /// Start a temporary HTTP server on localhost to receive the OAuth callback
@@ -151,11 +178,10 @@ async fn wait_for_callback() -> Result<String, String> {
     Ok(code)
 }
 
-/// Exchange an authorization code for access + refresh tokens
+/// Exchange an authorization code for access + refresh tokens using PKCE
 async fn exchange_code(
-    client_id: &str,
-    client_secret: &str,
     code: &str,
+    code_verifier: &str,
 ) -> Result<OAuthTokens, String> {
     let client = Client::new();
 
@@ -163,10 +189,11 @@ async fn exchange_code(
         .post(TOKEN_URL)
         .form(&[
             ("code", code),
-            ("client_id", client_id),
-            ("client_secret", client_secret),
+            ("client_id", config::GOOGLE_CLIENT_ID),
+            ("client_secret", config::GOOGLE_CLIENT_SECRET),
             ("redirect_uri", REDIRECT_URI),
             ("grant_type", "authorization_code"),
+            ("code_verifier", code_verifier),
         ])
         .send()
         .await
@@ -198,8 +225,6 @@ async fn exchange_code(
 
 /// Refresh an expired access token using the refresh token
 pub async fn refresh_access_token(
-    client_id: &str,
-    client_secret: &str,
     refresh_token: &str,
 ) -> Result<(String, String), String> {
     let client = Client::new();
@@ -208,8 +233,8 @@ pub async fn refresh_access_token(
         .post(TOKEN_URL)
         .form(&[
             ("refresh_token", refresh_token),
-            ("client_id", client_id),
-            ("client_secret", client_secret),
+            ("client_id", config::GOOGLE_CLIENT_ID),
+            ("client_secret", config::GOOGLE_CLIENT_SECRET),
             ("grant_type", "refresh_token"),
         ])
         .send()

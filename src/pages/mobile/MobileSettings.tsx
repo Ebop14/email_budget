@@ -1,5 +1,4 @@
 import { MobileHeader } from '../../components/mobile/MobileHeader';
-import { GmailCredentialsForm } from '../../components/gmail/GmailCredentialsForm';
 import { GmailConnectCard } from '../../components/gmail/GmailConnectCard';
 import { SenderFilterList } from '../../components/gmail/SenderFilterList';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -15,8 +14,6 @@ export function MobileSettings() {
     filters,
     syncStatus,
     isLoading,
-    saveCredentials,
-    deleteCredentials,
     connect,
     disconnect,
     syncNow,
@@ -52,13 +49,6 @@ export function MobileSettings() {
 
         {/* Gmail Integration */}
         <div className="space-y-4">
-          <GmailCredentialsForm
-            hasCredentials={status?.has_credentials ?? false}
-            onSave={saveCredentials}
-            onDelete={deleteCredentials}
-            isLoading={isLoading}
-          />
-
           <GmailConnectCard
             status={status}
             syncStatus={syncStatus}

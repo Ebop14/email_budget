@@ -4,7 +4,6 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useGmail } from '../hooks/useGmail';
 import { SUPPORTED_PROVIDERS } from '../lib/constants';
 import { cn } from '../lib/utils';
-import { GmailCredentialsForm } from '../components/gmail/GmailCredentialsForm';
 import { GmailConnectCard } from '../components/gmail/GmailConnectCard';
 import { SenderFilterList } from '../components/gmail/SenderFilterList';
 import * as tauri from '../lib/tauri';
@@ -16,8 +15,6 @@ export function Settings() {
     filters,
     syncStatus,
     isLoading,
-    saveCredentials,
-    deleteCredentials,
     connect,
     disconnect,
     syncNow,
@@ -58,13 +55,6 @@ export function Settings() {
           </Card>
 
           {/* Gmail Integration */}
-          <GmailCredentialsForm
-            hasCredentials={status?.has_credentials ?? false}
-            onSave={saveCredentials}
-            onDelete={deleteCredentials}
-            isLoading={isLoading}
-          />
-
           <GmailConnectCard
             status={status}
             syncStatus={syncStatus}

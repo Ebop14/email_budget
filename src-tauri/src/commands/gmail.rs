@@ -5,62 +5,21 @@ use crate::gmail::{oauth, oauth_mobile, tokens, sync, poller::GmailPollerState};
 use crate::gmail::types::*;
 
 // ============================================================================
-// Credentials
-// ============================================================================
-
-#[tauri::command]
-pub async fn gmail_save_credentials(
-    app_handle: AppHandle,
-    client_id: String,
-    client_secret: String,
-) -> Result<(), String> {
-    let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
-    tokens::save_credentials(&conn, &client_id, &client_secret)
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn gmail_has_credentials(app_handle: AppHandle) -> Result<bool, String> {
-    let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
-    tokens::has_credentials(&conn).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-pub async fn gmail_delete_credentials(app_handle: AppHandle) -> Result<(), String> {
-    let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
-
-    // Stop polling first
-    let poller = app_handle.state::<GmailPollerState>();
-    poller.stop();
-
-    // Delete everything
-    tokens::delete_tokens(&conn).map_err(|e| e.to_string())?;
-    tokens::reset_sync_state(&conn).map_err(|e| e.to_string())?;
-    tokens::clear_processed_messages(&conn).map_err(|e| e.to_string())?;
-    tokens::delete_credentials(&conn).map_err(|e| e.to_string())
-}
-
-// ============================================================================
 // OAuth
 // ============================================================================
 
 #[tauri::command]
 pub async fn gmail_connect(app_handle: AppHandle) -> Result<String, String> {
-    let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
-
-    let (client_id, client_secret) = tokens::get_credentials(&conn)
-        .map_err(|e| e.to_string())?
-        .ok_or("No Gmail credentials configured. Please add your Google Cloud OAuth credentials first.")?;
-
     // Run OAuth flow (desktop uses localhost callback, mobile uses custom URL scheme)
     let oauth_tokens = if cfg!(target_os = "ios") || cfg!(target_os = "android") {
-        // On mobile, return the auth URL for the frontend to open via ASWebAuthenticationSession
-        // The frontend will call gmail_exchange_code with the resulting code
-        let auth_url = oauth_mobile::build_auth_url(&client_id);
-        return Ok(format!("auth_url:{}", auth_url));
+        // On mobile, return the auth URL + code_verifier for the frontend
+        let (auth_url, code_verifier) = oauth_mobile::build_auth_url();
+        return Ok(format!("auth_url:{}|verifier:{}", auth_url, code_verifier));
     } else {
-        oauth::run_oauth_flow(&client_id, &client_secret).await?
+        oauth::run_oauth_flow().await?
     };
+
+    let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
 
     // Get user email from profile
     let gmail_client = crate::gmail::client::GmailClient::new(&oauth_tokens.access_token);
@@ -89,14 +48,11 @@ pub async fn gmail_connect(app_handle: AppHandle) -> Result<String, String> {
 pub async fn gmail_exchange_code(
     app_handle: AppHandle,
     code: String,
+    code_verifier: String,
 ) -> Result<String, String> {
+    let oauth_tokens = oauth_mobile::exchange_code_mobile(&code, &code_verifier).await?;
+
     let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
-
-    let (client_id, client_secret) = tokens::get_credentials(&conn)
-        .map_err(|e| e.to_string())?
-        .ok_or("No Gmail credentials configured.")?;
-
-    let oauth_tokens = oauth_mobile::exchange_code_mobile(&client_id, &client_secret, &code).await?;
 
     // Get user email from profile
     let gmail_client = crate::gmail::client::GmailClient::new(&oauth_tokens.access_token);
@@ -150,14 +106,12 @@ pub async fn gmail_disconnect(app_handle: AppHandle) -> Result<(), String> {
 pub async fn gmail_get_status(app_handle: AppHandle) -> Result<GmailConnectionStatus, String> {
     let conn = db::get_connection(&app_handle).map_err(|e| e.to_string())?;
 
-    let has_creds = tokens::has_credentials(&conn).map_err(|e| e.to_string())?;
     let token_info = tokens::get_tokens(&conn).map_err(|e| e.to_string())?;
     let sync_state = tokens::get_sync_state(&conn).map_err(|e| e.to_string())?;
 
     let poller = app_handle.state::<GmailPollerState>();
 
     Ok(GmailConnectionStatus {
-        has_credentials: has_creds,
         is_connected: token_info.is_some(),
         email: token_info.map(|(_, _, _, email)| email),
         is_polling: poller.is_running(),

@@ -16,16 +16,19 @@ interface TopMerchantsProps {
 export function TopMerchants({ merchants, isLoading }: TopMerchantsProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="animate-scale-in stagger-4">
         <CardHeader>
           <CardTitle>Top Merchants</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex justify-between">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-16" />
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-3 w-full rounded-full" />
               </div>
             ))}
           </div>
@@ -36,14 +39,14 @@ export function TopMerchants({ merchants, isLoading }: TopMerchantsProps) {
 
   if (merchants.length === 0) {
     return (
-      <Card>
+      <Card className="animate-scale-in stagger-4">
         <CardHeader>
           <CardTitle>Top Merchants</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm text-center py-4">
+          <div className="h-80 flex items-center justify-center text-muted-foreground text-sm">
             No merchants yet
-          </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -52,29 +55,34 @@ export function TopMerchants({ merchants, isLoading }: TopMerchantsProps) {
   const maxTotal = Math.max(...merchants.map((m) => m.total));
 
   return (
-    <Card>
+    <Card className="animate-scale-in stagger-4">
       <CardHeader>
         <CardTitle>Top Merchants</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {merchants.map((merchant, index) => (
-            <div key={index}>
-              <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium truncate max-w-[60%]">
-                  {merchant.merchant}
-                </span>
-                <span className="text-sm text-muted-foreground">
+            <div key={index} className="group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center text-xs font-bold text-primary group-hover:bg-primary/12 transition-colors">
+                    {index + 1}
+                  </div>
+                  <span className="text-sm font-semibold truncate max-w-[55%]">
+                    {merchant.merchant}
+                  </span>
+                </div>
+                <span className="text-sm font-medium tabular-nums">
                   {formatCurrency(merchant.total)}
                 </span>
               </div>
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-2.5 bg-primary/8 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all"
+                  className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${(merchant.total / maxTotal) * 100}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[11px] text-muted-foreground/70 mt-1.5">
                 {merchant.count} transaction{merchant.count !== 1 ? 's' : ''}
               </p>
             </div>

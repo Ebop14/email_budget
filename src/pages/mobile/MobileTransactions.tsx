@@ -12,7 +12,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { formatCurrency, formatDateRelative } from '../../lib/format';
 import { SUPPORTED_PROVIDERS } from '../../lib/constants';
 import { cn } from '../../lib/utils';
-import type { TransactionFilters, Category } from '../../types';
+import type { Category } from '../../types';
 
 export function MobileTransactions() {
   const {

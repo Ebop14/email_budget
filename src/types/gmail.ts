@@ -1,5 +1,4 @@
 export interface GmailConnectionStatus {
-  has_credentials: boolean;
   is_connected: boolean;
   email: string | null;
   is_polling: boolean;

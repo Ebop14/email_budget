@@ -101,7 +101,6 @@ pub struct GmailProfile {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GmailConnectionStatus {
-    pub has_credentials: bool,
     pub is_connected: bool,
     pub email: Option<String>,
     pub is_polling: bool,
